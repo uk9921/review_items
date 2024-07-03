@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<!--<script src="https://gradio.app/static/js/gradio.js"></script>-->
+<style>
+.content-box {
+  width: 1536px;
+  margin: auto;
+  border: 1px solid black;
+  padding: 10px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.text {
+  font-size: 18px;
+  text-align: justify;
+}
+
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+img {
+  width: 384px;
+}
+
+.line {
+  border-top:1px dashed black;
+}
+
+/* Add a checkbox to each content box */
+.checkbox {
+  position: absolute;
+  margin-left: -20px;
+}
+
+.img_checkbox {
+    float: right;
+    margin-top: -450px;
+    margin-left: -20px;
+}
+
+.img_checkbox_label {
+    float: right;
+    margin-top: 20px;
+    margin-left: -20px;
+}
+
+/* 隐藏原生复选框 */
+input[class=img_checkbox] {
+  display: none;
+}
+/* 自定义复选框外观 */
+input[class=img_checkbox] + label {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  background: #ffffff;
+  border: 2px solid #333;
+  border-radius: 10px;
+}
+/* 自定义复选框选中状态 */
+input[class=img_checkbox]:checked + label::before {
+  content: "\2716"; /* Unicode字符表示叉号 */
+  color: #e01c1a;
+  font-size: 15px;
+  position: relative; /* 设置元素为相对定位 */
+  top: -20%; /* 设置元素的垂直位置为50% */
+  left: 10%; /* 设置元素的垂直位置为50% */
+  text-align: center;
+}
+
+/* Add a button to export the selected content */
+.export-button {
+  display: block;
+  margin-bottom: 1em;
+}
+
+/* Add a pagination bar to navigate the pages */
+.pagination {
+  display: flex;
+  justify-content: center;
+}
+
+/* Style the pagination links */
+.pagination a {
+  color: black;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+/* Style the current page */
+.pagination a.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+/* Style the disabled page */
+.pagination a.disabled {
+  background-color: #ddd;
+  color: gray;
+}
+</style>
+<script>
+var contents = [];
+let status = [];
+var selectedLines = [];
+var deleteImages = [];
+// This function reads the data from the input box and creates content boxes for each line
+function createContentBoxes() {
+  // Get the file input element by its id
+  var fileInput = document.getElementById("file-input");
+
+  // Get the first (and only) file from the file input element
+  var file = fileInput.files[0];
+
+  if (file && file.type == "text/plain") {
+      // Create a new FileReader object to read the file content
+      var reader = new FileReader();
+      reader.readAsText(file);
+            // Define an onload event handler for the reader
+      reader.onload = function(e) {
+          // Get the result of the reader, which is a string
+          var inputText = e.target.result;
+          // Split the input text by newline characters to get an array of lines
+          var lines = inputText.split("\n");
+          // Loop through each line
+          for (var i = 0; i < lines.length; i++) {
+              // Get the current line
+            var line = lines[i];
+            // Split the line by tab characters to get an array of fields
+            var fields = line.split("||$$||");
+
+            // Check if the line has at least seven fields
+            if (fields.length >= 5) {
+              // Get the fields by their index
+              contents.push(fields);
+            }
+          }
+          // Call the function to create the pagination bar
+          status = Array.from({ length: contents.length }, () => []);
+          createPaginationBar();
+      }
+
+  }
+}
+
+// This function creates a pagination bar to navigate the pages
+function createPaginationBar() {
+  // Get the number of content boxes
+  var numContentBoxes = contents.length;
+
+
+  // Get the number of pages, assuming each page has 1 content boxes
+  var numPages = Math.ceil(numContentBoxes / 1);
+
+  // Create a new div element for the pagination bar
+  var paginationBar = document.createElement("div");
+  paginationBar.className = "pagination";
+
+  // Loop through each page
+  for (var i = 1; i <= numPages; i++) {
+    // Create a new a element for the pagination link
+    var link = document.createElement("a");
+    link.innerText = i;
+    link.href = "javascript:void(0);"; // Prevent the default action of the link
+    link.onclick = function() {showPage(this.innerText)}; // Add an onclick event to show the page
+
+    // If it is the first page, make it active
+    if (i == 1) {
+      link.className = "active";
+    }
+
+    // Append the link element to the pagination bar
+    paginationBar.appendChild(link);
+  }
+
+  // Append the pagination bar to the body element
+  document.body.appendChild(paginationBar);
+
+  // Call the function to show the first page
+  showPage(1);
+}
+
+// This function shows a specific page and hides the others
+function showPage(pageNum) {
+  // Get the content boxes and the pagination links
+  var links = document.getElementsByClassName("pagination")[0].getElementsByTagName("a");
+  var startIndex = (pageNum - 1) * 1;
+  var endIndex = Math.min(pageNum * 1, contents.length);
+  var containers = document.getElementsByClassName("content-box");
+  for (var i = containers.length - 1; i >= 0; i--) {
+    container = containers[i];
+    container.remove();
+  }
+  // Loop through each content box
+  for (var i = startIndex; i < endIndex; i++) {
+    // Check if the index is within the range of the page number
+    // Show the content box
+
+    var fields = contents[i];
+    var itemId = fields[0];
+    var imageNum = fields[1];
+    var videoNum = fields[2];
+    var imageUrls = fields[3];
+    var videoUrls = fields[4];
+    // Split the imageUrls by newline characters to get an array of urls
+    var imgUrls = imageUrls.split(",");
+    var vidUrls = videoUrls.split(",");
+    // 把vidUrls和imgUrls合并
+    var mergeUrls = imgUrls.concat(vidUrls);
+    if (status[i].length == 0) {
+        const stat = new Array(mergeUrls.length).fill(true);
+        status[i] = stat;
+    }
+    stat = status[i];
+    // Create a new div element for the content box
+    var contentBox = document.createElement("div");
+    contentBox.className = "content-box";
+    contentBox.id = "content-box-" + i; // Add an id to each content box
+
+    // Create a new div element for the title
+    var itemIdDiv = document.createElement("div");
+    itemIdDiv.className = "itemId";
+    itemIdDiv.innerText = "https://detail.tmall.com/item.htm?id=" + itemId;
+
+    // Create a new div element for the images
+    var imagesDiv = document.createElement("div");
+    imagesDiv.className = "images";
+
+    // Loop through each url
+    for (var j = 0; j < mergeUrls.length; j++) {
+        // Get the current url
+        var url = mergeUrls[j];
+        // Create a new img element for the image
+        if (url.includes(".mp4")) {
+            var img = document.createElement("video");
+        } else {
+            var img = document.createElement("img");
+        }
+        var img_checkbox = document.createElement("input");
+        img_checkbox.type = "checkbox";
+        img_checkbox.className = "img_checkbox";
+        img_checkbox.id = "img_checkbox-" + j;
+        img_checkbox.value = url;
+        var img_checkbox_label = document.createElement("label");
+        img_checkbox_label.setAttribute("for", img_checkbox.id);
+        img_checkbox_label.className = "img_checkbox_label"
+
+        img.onclick = function() {
+          // mergeUrls根据后缀名分割成两个list
+          var imageUrlsSplit = mergeUrls.filter(function(thisurl) {
+              return thisurl.includes(".jpg") || thisurl.includes(".png");
+          });
+          var videoUrlsSplit = mergeUrls.filter(function(thisurl) {
+              return thisurl.includes(".mp4");
+          });
+          var itemImgCheckbox = this.nextSibling;
+          if (!itemImgCheckbox.checked) {
+            // 删除
+            itemImgCheckbox.checked = true;
+            var index = mergeUrls.indexOf(itemImgCheckbox.value);
+            stat[index] = false;
+          } else {
+            // 加回
+            itemImgCheckbox.checked = false;
+            var index = mergeUrls.indexOf(itemImgCheckbox.value);
+            stat[index] = true;
+          }
+        };
+        if (!stat[j]) {
+            img_checkbox.checked = true;
+        }
+        img.alt = "Image " + (j + 1);
+        img.src = url;
+        img.width = "384";
+        img.autoplay = true;
+        img.muted = true;
+        img.loop = true;
+
+        // Append the img element to the images div
+        imagesDiv.appendChild(img);
+        imagesDiv.appendChild(img_checkbox);
+        imagesDiv.appendChild(img_checkbox_label);
+    }
+
+    // Append the checkbox, title, text, and images divs to the content box div
+    contentBox.appendChild(itemIdDiv);
+    contentBox.appendChild(imagesDiv);
+    contentBox.style.display = "block";
+    // Append the content box div to the body element
+    document.body.appendChild(contentBox);
+  }
+
+  // Loop through each link
+  for (var i = 0; i < links.length; i++) {
+    // Get the current link and its text
+    var link = links[i];
+    var text = link.innerText;
+
+    // Check if the text is equal to the page number
+    if (text == pageNum) {
+      // Make the link active
+      link.className = "active";
+    } else {
+      // Make the link inactive
+      link.className = "";
+    }
+  }
+}
+
+// This function exports the selected content to a text file
+function exportContent() {
+    // Join the selected lines by newline characters to get a string
+    // 遍历
+    for (var i = 0; i < contents.length; i++) {
+        var fields = contents[i];
+        var imageUrls = fields[3];
+        var videoUrls = fields[4];
+        // Split the imageUrls by newline characters to get an array of urls
+        var imgUrls = imageUrls.split(",");
+        var vidUrls = videoUrls.split(",");
+        // 把vidUrls和imgUrls合并
+        var mergeUrls = imgUrls.concat(vidUrls);
+        stat = status[i];
+        let selectUrls = [];
+        for (var j = 0; j < mergeUrls.length; j++) {
+            if (stat[j]) {
+                selectUrls.push(mergeUrls[j]);
+            }
+        }
+
+        if (selectUrls.length > 0) {
+            var imageUrlsSplit = selectUrls.filter(function(thisurl) {
+                return thisurl.includes(".jpg") || thisurl.includes(".png");
+            });
+            var videoUrlsSplit = selectUrls.filter(function(thisurl) {
+                return thisurl.includes(".mp4");
+            });
+            selectedLines.push(fields.slice(0, 3).join("||$$||") + "||$$||" +imageUrlsSplit.join(",") + "||$$||" +videoUrlsSplit.join(","));
+        }
+    }
+
+
+    var outputText = selectedLines.join("\n");
+
+    // Create a new blob object with the output text and type text/plain
+    var blob = new Blob([outputText], {type: "text/plain"});
+
+    // Create a new a element for downloading the blob as a file
+    var link = document.createElement("a");
+
+    // Use URL.createObjectURL() method to create a URL for the blob object
+    link.href = URL.createObjectURL(blob);
+
+    // Set the file name using the download attribute
+    link.download = "selected-content.txt";
+
+    // Append the link element to the body element
+    document.body.appendChild(link);
+
+    // Simulate a click on the link element
+    link.click();
+
+    // Remove the link element from the body element
+    document.body.removeChild(link);
+}
+
+</script>
+</head>
+<body>
+<h1>女娲离线审核工具</h1>
+<p>请输入数据文件，每一行是一条内容用||$$||分割。</p>
+<br>
+<label for="file-input">选择内容文件</label> <input type="file" id="file-input" onchange="createContentBoxes()" />
+
+<button onclick="exportContent()" class="export-button">导出内容</button>
+<br>
+</body>
+</html>
