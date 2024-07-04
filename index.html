@@ -261,8 +261,8 @@ function showPage(pageNum) {
     var mergeAIGCUrls = imgAIGCUrls.concat(vidAIGCUrls);
     var mergeALLUrls = [mergeUrls, mergeAIGCUrls];
     if (status[i].length == 0) {
-        const stat = new Array(mergeUrls.length).fill(true);
-        const AIGCStat = new Array(mergeAIGCUrls.length).fill(true);
+        const stat = new Array(mergeUrls.length).fill(false);
+        const AIGCStat = new Array(mergeAIGCUrls.length).fill(false);
         status[i] = [stat, AIGCStat];
     }
     stat = status[i];
@@ -305,22 +305,22 @@ function showPage(pageNum) {
             img_checkbox_label.setAttribute("for", img_checkbox.id);
             img_checkbox_label.className = "img_checkbox_label";
             img.onclick = function() {
-              const index0 = parseInt(img.getAttribute('index-0'));
-              const index1 = parseInt(img.getAttribute('index-1'));
+              const index0 = parseInt(this.getAttribute('index-0'));
+              const index1 = parseInt(this.getAttribute('index-1'));
               var itemImgCheckbox = this.nextSibling;
               if (!itemImgCheckbox.checked) {
-                // 删除
+                // 加回, 这是个click func，外层for已经++，这里要-1
+                status[i-1][index0][index1] = true;
                 itemImgCheckbox.checked = true;
                 var index = mergeALLUrls[index0].indexOf(itemImgCheckbox.value);
-                stat[index0][index1] = false;
               } else {
-                // 加回
+                // 删除
+                status[i-1][index0][index1] = false;
                 itemImgCheckbox.checked = false;
                 var index = mergeALLUrls[index0].indexOf(itemImgCheckbox.value);
-                stat[index0][index1] = true;
               }
             };
-            if (!stat[j][k]) {
+            if (stat[j][k]) {
                 img_checkbox.checked = true;
             }
             img.src = url;
@@ -413,12 +413,13 @@ function exportContent() {
         let selectUrls = [[],[]];
         for (var j = 0; j < mergeALLUrls.length; j++) {
             for (var k = 0; k < mergeALLUrls[j].length; k++) {
-                if (! stat[j][k]) {  // hack 取反一下
+                if (stat[j][k]) {
                     selectUrls[j].push(mergeALLUrls[j][k]);
                 }
             }
         }
         selectedLine = fields.slice(0, 5).join("||$$||");
+        var cnt = 0;
         for (var j = 0; j < selectUrls.length; j++) {
             selectUrlsPart = selectUrls[j];
             if (selectUrlsPart.length > 0) {
@@ -429,12 +430,13 @@ function exportContent() {
                     return thisurl.includes(".mp4");
                 });
                 selectedLine += "||$$||" + imageUrlsSplit.join(",") + "||$$||" + videoUrlsSplit.join(",");
+                cnt += 1;
             }
             else {
                 selectedLine += "||$$||" + "||$$||";
             }
         }
-        if (selectUrls.length > 0) {
+        if (cnt > 0) {
             selectedLines.push(selectedLine);
         }
     }
