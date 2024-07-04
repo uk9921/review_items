@@ -165,7 +165,7 @@ function prevPage() {
   //如果当前页数大于1，将当前页数减一，并调用显示图片的函数
   if (currentPage > 1) {
     currentPage--;
-    showPage(currentPage, pageSize);
+    showPage(currentPage);
   }
 }
 
@@ -174,7 +174,7 @@ function nextPage() {
   //如果当前页数小于总页数，将当前页数加一，并调用显示图片的函数
   if (currentPage < totalPages) {
     currentPage++;
-    showPage(currentPage, pageSize);
+    showPage(currentPage);
   }
 }
 
@@ -182,7 +182,7 @@ function nextPage() {
 function goToPage(page) {
   if (isNaN(page) || page < 1 || page > totalPages) return;
   currentPage = parseInt(page);
-  showPage(currentPage, pageSize);
+  showPage(currentPage);
 }
 
 
@@ -325,6 +325,7 @@ function showPage(pageNum) {
         imagesDiv.appendChild(img_checkbox_label);
     }
 
+    document.getElementById("current").innerHTML = pageNum;
     // Append the checkbox, title, text, and images divs to the content box div
     contentBox.appendChild(itemIdDiv);
     contentBox.appendChild(imagesDiv);
