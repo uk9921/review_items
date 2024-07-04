@@ -69,8 +69,10 @@ input[class=img_checkbox] + label {
 }
 /* 自定义复选框选中状态 */
 input[class=img_checkbox]:checked + label::before {
-  content: "\2716"; /* Unicode字符表示叉号 */
-  color: #e01c1a;
+  /* content: "\2716"; */  /* Unicode字符表示叉号 */
+  content: "\2714";
+  /* color: #e01c1a; */
+  color: #33c900;
   font-size: 15px;
   position: relative; /* 设置元素为相对定位 */
   top: -20%; /* 设置元素的垂直位置为50% */
@@ -411,7 +413,7 @@ function exportContent() {
         let selectUrls = [[],[]];
         for (var j = 0; j < mergeALLUrls.length; j++) {
             for (var k = 0; k < mergeALLUrls[j].length; k++) {
-                if (stat[j][k]) {
+                if (! stat[j][k]) {  // hack 取反一下
                     selectUrls[j].push(mergeALLUrls[j][k]);
                 }
             }
