@@ -114,6 +114,9 @@ var contents = [];
 let status = [];
 var selectedLines = [];
 var deleteImages = [];
+var currentPage = 1;
+var totalPages = 0;
+var pageSize = 1;
 // This function reads the data from the input box and creates content boxes for each line
 function createContentBoxes() {
   // Get the file input element by its id
@@ -147,11 +150,41 @@ function createContentBoxes() {
           }
           // Call the function to create the pagination bar
           status = Array.from({ length: contents.length }, () => []);
-          createPaginationBar();
+<!--          createPaginationBar();-->
+          totalPages = Math.ceil(contents.length / 1);
+          //更新总页数的显示
+          document.getElementById("total").innerHTML = totalPages;
+          showPage(1);
       }
 
   }
 }
+
+//定义一个函数，用于显示上一页的图片
+function prevPage() {
+  //如果当前页数大于1，将当前页数减一，并调用显示图片的函数
+  if (currentPage > 1) {
+    currentPage--;
+    showPage(currentPage, pageSize);
+  }
+}
+
+//定义一个函数，用于显示下一页的图片
+function nextPage() {
+  //如果当前页数小于总页数，将当前页数加一，并调用显示图片的函数
+  if (currentPage < totalPages) {
+    currentPage++;
+    showPage(currentPage, pageSize);
+  }
+}
+
+// 新增一个函数来跳转到指定页面
+function goToPage(page) {
+  if (isNaN(page) || page < 1 || page > totalPages) return;
+  currentPage = parseInt(page);
+  showPage(currentPage, pageSize);
+}
+
 
 // This function creates a pagination bar to navigate the pages
 function createPaginationBar() {
@@ -193,7 +226,7 @@ function createPaginationBar() {
 // This function shows a specific page and hides the others
 function showPage(pageNum) {
   // Get the content boxes and the pagination links
-  var links = document.getElementsByClassName("pagination")[0].getElementsByTagName("a");
+<!--  var links = document.getElementsByClassName("pagination")[0].getElementsByTagName("a");-->
   var startIndex = (pageNum - 1) * 1;
   var endIndex = Math.min(pageNum * 1, contents.length);
   var containers = document.getElementsByClassName("content-box");
@@ -300,22 +333,43 @@ function showPage(pageNum) {
     document.body.appendChild(contentBox);
   }
 
-  // Loop through each link
-  for (var i = 0; i < links.length; i++) {
-    // Get the current link and its text
-    var link = links[i];
-    var text = link.innerText;
+<!--  // Loop through each link-->
+<!--  for (var i = 0; i < links.length; i++) {-->
+<!--    // Get the current link and its text-->
+<!--    var link = links[i];-->
+<!--    var text = link.innerText;-->
 
-    // Check if the text is equal to the page number
-    if (text == pageNum) {
-      // Make the link active
-      link.className = "active";
-    } else {
-      // Make the link inactive
-      link.className = "";
-    }
-  }
+<!--    // Check if the text is equal to the page number-->
+<!--    if (text == pageNum) {-->
+<!--      // Make the link active-->
+<!--      link.className = "active";-->
+<!--    } else {-->
+<!--      // Make the link inactive-->
+<!--      link.className = "";-->
+<!--    }-->
+<!--  }-->
 }
+
+// 监听键盘事件
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'ArrowLeft') { // 左箭头键
+        prevPage();
+    } else if (event.key === 'ArrowRight') { // 右箭头键
+        nextPage();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  // 更新按钮事件，增加跳转到指定页面的功能
+
+  document.getElementById('goToPageInput').addEventListener('change', function() {
+    const page = parseInt(this.value);
+    if (!isNaN(page)) {
+      goToPage(page);
+      this.value = '';
+    }
+  });
+});
 
 // This function exports the selected content to a text file
 function exportContent() {
@@ -377,11 +431,15 @@ function exportContent() {
 </script>
 </head>
 <body>
-<h1>女娲离线审核工具</h1>
+<h1>审核工具</h1>
 <p>请输入数据文件，每一行是一条内容用||$$||分割。</p>
 <br>
 <label for="file-input">选择内容文件</label> <input type="file" id="file-input" onchange="createContentBoxes()" />
-
+<button onclick="prevPage()">上一页</button>
+<button onclick="nextPage()">下一页</button>
+<input type="text" id="goToPageInput" placeholder="跳转到页码" onfocus="this.placeholder = ''" onblur="this.placeholder = '跳转到页码'">
+<div></div>
+<p>当前第<span id="current">0</span>页，共<span id="total">0</span>页</p>
 <button onclick="exportContent()" class="export-button">导出内容</button>
 <br>
 </body>
