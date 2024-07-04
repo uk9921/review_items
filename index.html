@@ -243,16 +243,25 @@ function showPage(pageNum) {
     var itemId = fields[0];
     var imageNum = fields[1];
     var videoNum = fields[2];
-    var imageUrls = fields[3];
-    var videoUrls = fields[4];
+    var imageAIGCNum = fields[3];
+    var videoAIGCNum = fields[4];
+    var imageUrls = fields[5];
+    var videoUrls = fields[6];
+    var imageAIGCUrls = fields[7];
+    var videoAIGCUrls = fields[8];
     // Split the imageUrls by newline characters to get an array of urls
     var imgUrls = imageUrls.split(",");
     var vidUrls = videoUrls.split(",");
+    var imgAIGCUrls = imageAIGCUrls.split(",");
+    var vidAIGCUrls = videoAIGCUrls.split(",");
     // 把vidUrls和imgUrls合并
     var mergeUrls = imgUrls.concat(vidUrls);
+    var mergeAIGCUrls = imgAIGCUrls.concat(vidAIGCUrls);
+    var mergeALLUrls = [mergeUrls, mergeAIGCUrls];
     if (status[i].length == 0) {
         const stat = new Array(mergeUrls.length).fill(true);
-        status[i] = stat;
+        const AIGCStat = new Array(mergeAIGCUrls.length).fill(true);
+        status[i] = [stat, AIGCStat];
     }
     stat = status[i];
     // Create a new div element for the content box
@@ -267,77 +276,70 @@ function showPage(pageNum) {
 
     var imageNumDiv = document.createElement("div");
     imageNumDiv.className = "text";
-    imageNumDiv.innerText = "图像数量:" + imageNum;
-
-    var videoNumDiv = document.createElement("div");
-    videoNumDiv.className = "text";
-    videoNumDiv.innerText = "视频数量:" + videoNum;
+    imageNumDiv.innerText = "普通图像: " + imageNum + ", AI图像: " + imageAIGCNum + "  普通视频: " + imageAIGCNum + ", AI视频: " + videoAIGCNum;
 
     // Create a new div element for the images
     var imagesDiv = document.createElement("div");
     imagesDiv.className = "images";
 
     // Loop through each url
-    for (var j = 0; j < mergeUrls.length; j++) {
-        // Get the current url
-        var url = mergeUrls[j];
-        // Create a new img element for the image
-        if (url.includes(".mp4")) {
-            var img = document.createElement("video");
-        } else {
-            var img = document.createElement("img");
-        }
-        var img_checkbox = document.createElement("input");
-        img_checkbox.type = "checkbox";
-        img_checkbox.className = "img_checkbox";
-        img_checkbox.id = "img_checkbox-" + j;
-        img_checkbox.value = url;
-        var img_checkbox_label = document.createElement("label");
-        img_checkbox_label.setAttribute("for", img_checkbox.id);
-        img_checkbox_label.className = "img_checkbox_label"
+    for (var j = 0; j < mergeALLUrls.length; j++) {
+        for (var k = 0; k < mergeALLUrls[j].length; k++) {
+            var url = mergeALLUrls[j][k];
+            if (url == "") {
+                continue;
+            }
+            if (url.includes(".mp4")) {
+                var img = document.createElement("video");
+            } else {
+                var img = document.createElement("img");
+            }
+            var img_checkbox = document.createElement("input");
+            img_checkbox.type = "checkbox";
+            img_checkbox.className = "img_checkbox";
+            img_checkbox.id = "img_checkbox-" + j + "-" + k;
+            img_checkbox.value = url;
+            var img_checkbox_label = document.createElement("label");
+            img_checkbox_label.setAttribute("for", img_checkbox.id);
+            img_checkbox_label.className = "img_checkbox_label";
+            img.onclick = function() {
+              const index0 = parseInt(img.getAttribute('index-0'));
+              const index1 = parseInt(img.getAttribute('index-1'));
+              var itemImgCheckbox = this.nextSibling;
+              if (!itemImgCheckbox.checked) {
+                // 删除
+                itemImgCheckbox.checked = true;
+                var index = mergeALLUrls[index0].indexOf(itemImgCheckbox.value);
+                stat[index0][index1] = false;
+              } else {
+                // 加回
+                itemImgCheckbox.checked = false;
+                var index = mergeALLUrls[index0].indexOf(itemImgCheckbox.value);
+                stat[index0][index1] = true;
+              }
+            };
+            if (!stat[j][k]) {
+                img_checkbox.checked = true;
+            }
+            img.src = url;
+            img.width = "384";
+            img.autoplay = true;
+            img.muted = true;
+            img.loop = true;
+            img.setAttribute("index-0", j.toString());
+            img.setAttribute("index-1", k.toString());
 
-        img.onclick = function() {
-          // mergeUrls根据后缀名分割成两个list
-          var imageUrlsSplit = mergeUrls.filter(function(thisurl) {
-              return thisurl.includes(".jpg") || thisurl.includes(".png");
-          });
-          var videoUrlsSplit = mergeUrls.filter(function(thisurl) {
-              return thisurl.includes(".mp4");
-          });
-          var itemImgCheckbox = this.nextSibling;
-          if (!itemImgCheckbox.checked) {
-            // 删除
-            itemImgCheckbox.checked = true;
-            var index = mergeUrls.indexOf(itemImgCheckbox.value);
-            stat[index] = false;
-          } else {
-            // 加回
-            itemImgCheckbox.checked = false;
-            var index = mergeUrls.indexOf(itemImgCheckbox.value);
-            stat[index] = true;
-          }
-        };
-        if (!stat[j]) {
-            img_checkbox.checked = true;
+            // Append the img element to the images div
+            imagesDiv.appendChild(img);
+            imagesDiv.appendChild(img_checkbox);
+            imagesDiv.appendChild(img_checkbox_label);
         }
-        img.alt = "Image " + (j + 1);
-        img.src = url;
-        img.width = "384";
-        img.autoplay = true;
-        img.muted = true;
-        img.loop = true;
-
-        // Append the img element to the images div
-        imagesDiv.appendChild(img);
-        imagesDiv.appendChild(img_checkbox);
-        imagesDiv.appendChild(img_checkbox_label);
     }
 
     document.getElementById("current").innerHTML = pageNum;
     // Append the checkbox, title, text, and images divs to the content box div
     contentBox.appendChild(itemIdDiv);
     contentBox.appendChild(imageNumDiv);
-    contentBox.appendChild(videoNumDiv);
     contentBox.appendChild(imagesDiv);
     contentBox.style.display = "block";
     // Append the content box div to the body element
@@ -388,29 +390,50 @@ function exportContent() {
     // 遍历
     for (var i = 0; i < contents.length; i++) {
         var fields = contents[i];
-        var imageUrls = fields[3];
-        var videoUrls = fields[4];
+        var imageUrls = fields[5];
+        var videoUrls = fields[6];
+        var imageAIGCUrls = fields[7];
+        var videoAIGCUrls = fields[8];
         // Split the imageUrls by newline characters to get an array of urls
         var imgUrls = imageUrls.split(",");
         var vidUrls = videoUrls.split(",");
-        // 把vidUrls和imgUrls合并
+        var imgAIGCUrls = imageAIGCUrls.split(",");
+        var vidAIGCUrls = videoAIGCUrls.split(",");
+        // 把vidUrls, imgAIGCUrls, vidAIGCUrls和imgUrls合并
         var mergeUrls = imgUrls.concat(vidUrls);
+        var mergeAIGCUrls = imgAIGCUrls.concat(vidAIGCUrls);
+        var mergeALLUrls = [mergeUrls, mergeAIGCUrls];
+
         stat = status[i];
-        let selectUrls = [];
-        for (var j = 0; j < mergeUrls.length; j++) {
-            if (stat[j]) {
-                selectUrls.push(mergeUrls[j]);
+        if (stat.length == 0) {
+            break
+        }
+        let selectUrls = [[],[]];
+        for (var j = 0; j < mergeALLUrls.length; j++) {
+            for (var k = 0; k < mergeALLUrls[j].length; k++) {
+                if (stat[j][k]) {
+                    selectUrls[j].push(mergeALLUrls[j][k]);
+                }
             }
         }
-
+        selectedLine = fields.slice(0, 5).join("||$$||");
+        for (var j = 0; j < selectUrls.length; j++) {
+            selectUrlsPart = selectUrls[j];
+            if (selectUrlsPart.length > 0) {
+                var imageUrlsSplit = selectUrlsPart.filter(function(thisurl) {
+                    return thisurl.includes(".jpg") || thisurl.includes(".png");
+                });
+                var videoUrlsSplit = selectUrlsPart.filter(function(thisurl) {
+                    return thisurl.includes(".mp4");
+                });
+                selectedLine += "||$$||" + imageUrlsSplit.join(",") + "||$$||" + videoUrlsSplit.join(",");
+            }
+            else {
+                selectedLine += "||$$||" + "||$$||";
+            }
+        }
         if (selectUrls.length > 0) {
-            var imageUrlsSplit = selectUrls.filter(function(thisurl) {
-                return thisurl.includes(".jpg") || thisurl.includes(".png");
-            });
-            var videoUrlsSplit = selectUrls.filter(function(thisurl) {
-                return thisurl.includes(".mp4");
-            });
-            selectedLines.push(fields.slice(0, 3).join("||$$||") + "||$$||" +imageUrlsSplit.join(",") + "||$$||" +videoUrlsSplit.join(","));
+            selectedLines.push(selectedLine);
         }
     }
 
@@ -446,8 +469,8 @@ function exportContent() {
 <p>请输入数据文件，每一行是一条内容用||$$||分割。</p>
 <br>
 <label for="file-input">选择内容文件</label> <input type="file" id="file-input" onchange="createContentBoxes()" />
-<button onclick="prevPage()">上一页</button>
-<button onclick="nextPage()">下一页</button>
+<button onclick="prevPage()">上一页(左)</button>
+<button onclick="nextPage()">下一页(右)</button>
 <input type="text" id="goToPageInput" placeholder="跳转到页码" onfocus="this.placeholder = ''" onblur="this.placeholder = '跳转到页码'">
 <div></div>
 <p>当前第<span id="current">0</span>页，共<span id="total">0</span>页</p>
