@@ -262,8 +262,16 @@ function showPage(pageNum) {
 
     // Create a new div element for the title
     var itemIdDiv = document.createElement("div");
-    itemIdDiv.className = "itemId";
+    itemIdDiv.className = "title";
     itemIdDiv.innerText = "https://detail.tmall.com/item.htm?id=" + itemId;
+
+    var imageNumDiv = document.createElement("div");
+    imageNumDiv.className = "text";
+    imageNumDiv.innerText = "图像数量:" + imageNum;
+
+    var videoNumDiv = document.createElement("div");
+    videoNumDiv.className = "text";
+    videoNumDiv.innerText = "视频数量:" + videoNum;
 
     // Create a new div element for the images
     var imagesDiv = document.createElement("div");
@@ -328,6 +336,8 @@ function showPage(pageNum) {
     document.getElementById("current").innerHTML = pageNum;
     // Append the checkbox, title, text, and images divs to the content box div
     contentBox.appendChild(itemIdDiv);
+    contentBox.appendChild(imageNumDiv);
+    contentBox.appendChild(videoNumDiv);
     contentBox.appendChild(imagesDiv);
     contentBox.style.display = "block";
     // Append the content box div to the body element
